@@ -1,7 +1,9 @@
-import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog, Menu, MenuItem } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import axios from 'axios'
+import vm from 'vm'
 
 function createWindow(): void {
   // Create the browser window.
@@ -9,7 +11,7 @@ function createWindow(): void {
     width: 1028,
     height: 900,
     show: false,
-    autoHideMenuBar: true,
+    // autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -62,6 +64,25 @@ app.whenReady().then(() => {
     return result.filePaths[0]
   })
 
+  // 创建菜单
+  const menu = new Menu()
+  menu.append(
+    new MenuItem({
+      label: '测试',
+      submenu: [
+        {
+          label: '执行云端js',
+          click: async () => {
+            await encodeBase64()
+          }
+        }
+      ]
+    })
+  )
+
+  // 设置应用程序菜单
+  Menu.setApplicationMenu(menu)
+
   createWindow()
 
   app.on('activate', function () {
@@ -82,3 +103,33 @@ app.on('window-all-closed', () => {
 
 // In this file you can include the rest of your app"s specific main process
 // code. You can also put them in separate files and require them here.
+
+// 下载 base64.js 并执行
+async function encodeBase64(): Promise<void> {
+  console.log('encodeBase64')
+  // 下载 base64.js
+  const url = 'https://base64.xpcha.com/base64.js'
+  const response = await axios.get(url)
+
+  // 删除 response.data 的最后两行，并在末尾添加一个 "}"
+  let scriptData = response.data.split('\n')
+  scriptData.pop() // 删除最后一行
+  scriptData.pop()
+  scriptData.push('}') // 添加 "}"
+  scriptData = scriptData.join('\n')
+
+  // 打印脚本数据
+  console.log(scriptData)
+
+  // 创建一个新的上下文并执行脚本
+  const script = new vm.Script(scriptData)
+  const context = vm.createContext({})
+  script.runInContext(context)
+
+  // 调用 base64encode 函数
+  const encodedStr = context.base64encode('Hello, World!')
+  console.log('Encoded String:', encodedStr)
+  // 调用 base64decode 函数
+  const decodedStr = context.base64decode(encodedStr)
+  console.log('Decoded String:', decodedStr)
+}
