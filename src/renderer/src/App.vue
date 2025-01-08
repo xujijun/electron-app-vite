@@ -4,15 +4,10 @@ import { ref } from 'vue'
 
 const ipcHandle = () => window.electron.ipcRenderer.send('ping')
 
-const imageSrc = ref('')
+const imageSrc = ref()
 const selectImage = async () => {
-  // imageSrc.value = await window.electronAPI2.selectImage()
   imageSrc.value = await window.api.selectImage()
   console.log('select-image result:' + imageSrc.value)
-  // const image = document.getElementById('image')
-  // if (image) {
-  //   image.src = result
-  // }
 }
 </script>
 
@@ -25,7 +20,7 @@ const selectImage = async () => {
     and
     <span class="ts">TypeScript</span>
   </div>
-  <p class="tip">Please try pressing <code>F12</code> to open the devTool</p>
+  <p class="tip">想打开调试界面，请按 <code>F12</code> </p>
   <div class="actions">
     <div class="action">
       <a href="https://electron-vite.org/" target="_blank" rel="noreferrer">Documentation</a>
@@ -35,8 +30,9 @@ const selectImage = async () => {
     </div>
     <div>
       <h1>打开一张图片来展示：</h1>
-      <button id="select-image" @click="selectImage">选择图片</button>
-      <img id="image" :src="imageSrc" alt="Selected Image" style="max-width: 100%; height: auto" />
+      <button @click="selectImage">选择图片</button>
+      <button @click="imageSrc=''">清空图片</button>
+      <img id="image" :src="imageSrc" style="max-width: 100%; height: auto" v-if="imageSrc"/>
     </div>
   </div>
   <Versions />

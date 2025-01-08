@@ -24,7 +24,10 @@ $ npm run dev
 
 ```bash
 # For windows
+## 安装包：
 $ npm run build:win
+## 可执行exe：
+npm run build:unpack
 
 # For macOS
 $ npm run build:mac
