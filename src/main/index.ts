@@ -4,6 +4,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import axios from 'axios'
 import vm from 'vm'
+import { autoUpdater } from 'electron-updater'
 
 function createWindow(): void {
   // Create the browser window.
@@ -37,6 +38,62 @@ function createWindow(): void {
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
+
+  // 获取程序版本号
+  const version = 'v' + app.getVersion()
+  // 拼接更新服务器地址
+  const updateUrl = `https://file-xwc-test.veehouse.com/electron/electron-app-vite/${version}/`
+  autoUpdater.setFeedURL(updateUrl)
+
+  // 监听更新事件
+  autoUpdater.on('checking-for-update', () => {
+    console.log('正在检查更新...')
+  })
+
+  autoUpdater.on('update-available', (info) => {
+    console.log('发现新版本:', info.version)
+    console.log('更新说明:', info.releaseNotes)
+    // 可以在这里通知用户有更新可用
+    if (mainWindow) {
+      mainWindow.webContents.send('update-available', info)
+    }
+  })
+
+  autoUpdater.on('update-not-available', (info) => {
+    console.log('当前已是最新版本。', info.releaseNotes)
+  })
+
+  autoUpdater.on('error', (err) => {
+    console.log('更新检查出错:', err)
+  })
+
+  autoUpdater.on('download-progress', (progressObj) => {
+    let log_message = '下载速度: ' + progressObj.bytesPerSecond
+    log_message = log_message + ' - 已下载 ' + progressObj.percent + '%'
+    log_message = log_message + ' (' + progressObj.transferred + '/' + progressObj.total + ')'
+    console.log(log_message)
+    // 可以在这里更新下载进度条
+    if (mainWindow) {
+      mainWindow.webContents.send('download-progress', progressObj)
+    }
+  })
+
+  autoUpdater.on('update-downloaded', (info) => {
+    console.log('更新下载完成，准备安装。')
+    // 可以在这里提示用户下载完成并询问是否安装
+    if (mainWindow) {
+      mainWindow.webContents.send('update-downloaded', info)
+    }
+    // 自动安装更新
+    autoUpdater.quitAndInstall()
+  })
+
+  // 检查更新
+  if (is.dev) {
+    autoUpdater.forceDevUpdateConfig = true
+  }
+  // 检查更新
+  autoUpdater.checkForUpdatesAndNotify()
 }
 
 // This method will be called when Electron has finished
